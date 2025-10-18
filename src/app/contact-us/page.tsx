@@ -40,7 +40,7 @@ export default function ContactUsPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              placeholder="example@email.com"
+              placeholder="ahmedsherife888@gmail.com"
             />
           </div>
 
