@@ -1,32 +1,34 @@
- // firebaseConfig.ts
+ // ✅ src/app/lib/firebaseConfig.ts
 
-// ✅ استيراد المكتبات المطلوبة
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-// 💡 قم باستيراد النوع 'Analytics' من 'firebase/analytics'
-import { getAnalytics, isSupported, Analytics } from "firebase/analytics"; 
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
 
 // ✅ إعدادات Firebase الخاصة بمشروعك
 const firebaseConfig = {
   apiKey: "AIzaSyBURbl944GjbkDvlp16L9xnoJ4m0uGKqpU",
   authDomain: "ertq-74b99.firebaseapp.com",
   projectId: "ertq-74b99",
-  storageBucket: "ertq-74b99.firebasestorage.app",
+  storageBucket: "ertq-74b99.appspot.com", // ✅ تم تصحيحها هنا
   messagingSenderId: "882908229895",
   appId: "1:882908229895:web:ca61b3cbeacdb8ad88d5a2",
-  measurementId: "G-NH5DK3KYB8"
+  measurementId: "G-NH5DK3KYB8",
 };
 
-// ✅ تهيئة التطبيق وتصديره
-export const app = initializeApp(firebaseConfig);
+// ✅ منع التهيئة المكررة (مهم جدًا في Next.js)
+export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // ✅ Firestore Database
 export const db = getFirestore(app);
 
-// 💡 تم استبدال 'any' بالنوع المحدد 'Analytics | null'
-export let analytics: Analytics | null = null; 
+// ✅ نظام تسجيل الدخول
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
-// ✅ Analytics (فقط في المتصفح)
+// 💡 Analytics (فقط في المتصفح)
+export let analytics: Analytics | null = null;
+
 if (typeof window !== "undefined") {
   isSupported().then((supported) => {
     if (supported) {
@@ -34,5 +36,3 @@ if (typeof window !== "undefined") {
     }
   });
 }
-
-// ✅ تم حل مشكلة 'Unexpected any'

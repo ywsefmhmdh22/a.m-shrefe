@@ -1,6 +1,4 @@
-// next.config.js
-
-/** @type {import('next').NextConfig} */
+ /** @type {import('next').NextConfig} */
 const nextConfig = {
   // تفعيل إعدادات الصور
   images: {
@@ -8,13 +6,19 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        // ⬅️ هذا النطاق يسمح بتحميل صور Firebase Storage
+        // ✅ هذا النطاق هو الخاص بـ Firebase Storage
         hostname: 'firebasestorage.googleapis.com', 
+        port: '',
+        pathname: '/**', // السماح بأي مسار ضمن هذا النطاق
+      },
+      {
+        protocol: 'https',
+        // ✅ هذا النطاق ضروري لظهور الصور الاحتياطية (Placeholders)
+        hostname: 'placehold.co', 
         port: '',
         pathname: '/**', 
       },
-      // إذا كان لديك صور محلية في مجلد public/logo.jpg
-      // لن تحتاج لإضافة أي إعدادات خاصة لها هنا، Next.js يتعامل معها تلقائياً.
+      // أضف أي نطاقات أخرى تستضيف عليها الصور هنا
     ],
   },
 };
