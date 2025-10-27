@@ -1,0 +1,8 @@
+ [
+  {
+    "origin": ["http://localhost:3000", "https://ertq-74b99.web.app", "https://ertq-74b99.firebaseapp.com"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "responseHeader": ["Content-Type", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]

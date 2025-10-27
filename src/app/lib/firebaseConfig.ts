@@ -4,13 +4,14 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
+import { getStorage } from "firebase/storage";
 
 // ✅ إعدادات Firebase الخاصة بمشروعك
 const firebaseConfig = {
   apiKey: "AIzaSyBURbl944GjbkDvlp16L9xnoJ4m0uGKqpU",
   authDomain: "ertq-74b99.firebaseapp.com",
   projectId: "ertq-74b99",
-  storageBucket: "ertq-74b99.appspot.com", // ✅ تم تصحيحها هنا
+  storageBucket: "ertq-74b99.firebasestorage.app", // ✅ تم التصحيح هنا
   messagingSenderId: "882908229895",
   appId: "1:882908229895:web:ca61b3cbeacdb8ad88d5a2",
   measurementId: "G-NH5DK3KYB8",
@@ -21,6 +22,9 @@ export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // ✅ Firestore Database
 export const db = getFirestore(app);
+
+// ✅ Storage (تم ربطه بالـ bucket الصحيح)
+export const storage = getStorage(app, "gs://ertq-74b99.firebasestorage.app");
 
 // ✅ نظام تسجيل الدخول
 export const auth = getAuth(app);
