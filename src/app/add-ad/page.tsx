@@ -89,36 +89,41 @@ export default function AddAdPage() {
       setLoading(true);
       toast.loading("جاري رفع الصور...", { id: "uploading" });
 
-      // ✅ رفع أول صورة فقط كصورة رئيسية
-      const storageRef = ref(storage, `ads/${Date.now()}_${images[0].file.name}`);
-      await uploadBytes(storageRef, images[0].file);
-      const downloadURL = await getDownloadURL(storageRef);
+      const uploadedImageUrls: string[] = [];
+
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        const storageRef = ref(storage, `ads/${Date.now()}_${img.file.name}`);
+        await uploadBytes(storageRef, img.file);
+        const downloadURL = await getDownloadURL(storageRef);
+        uploadedImageUrls.push(downloadURL);
+      }
 
       toast.dismiss("uploading");
-      toast.success("تم رفع الصورة بنجاح!");
-      toast.loading("جاري حفظ بيانات الإعلان...");
+      toast.success("✅ تم رفع جميع الصور بنجاح!");
+      toast.loading("⏳ جاري حفظ بيانات الإعلان...");
 
       const priceToSave = formData.price ? Number(formData.price) : null;
 
-      // ✅ حفظ البيانات مع الصورة الواحدة (image وليس images)
       await addDoc(collection(db, "ads"), {
         name: formData.title,
         description: formData.description,
         price: priceToSave,
-        image: downloadURL,
+        images: uploadedImageUrls, // ✅ بدل image → images array
         category: formData.category.toLowerCase().trim(),
         createdAt: serverTimestamp(),
       });
 
       toast.dismiss();
-      toast.success("تمت إضافة الإعلان بنجاح!");
+      toast.success("🎉 تمت إضافة الإعلان بنجاح!");
 
       images.forEach((img) => URL.revokeObjectURL(img.preview));
       setTimeout(() => router.push("/"), 1500);
+
     } catch (error) {
       toast.dismiss("uploading");
       console.error("💥 خطأ أثناء الإضافة:", error);
-      toast.error("حدث خطأ أثناء رفع الصورة أو حفظ الإعلان.");
+      toast.error("❌ حدث خطأ أثناء رفع الصور أو حفظ الإعلان.");
     } finally {
       setLoading(false);
     }
