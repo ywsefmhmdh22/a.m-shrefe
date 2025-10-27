@@ -6,7 +6,7 @@ import {
     getAuth, 
     signInWithCustomToken, 
     signInAnonymously,
-    Auth // استيراد نوع Auth
+    Auth 
 } from 'firebase/auth'; 
 import { 
     getFirestore, 
@@ -32,18 +32,17 @@ const YOUR_FIREBASE_CONFIG = {
     measurementId: "G-NH5DK3KYB8"
 };
 
-// تعريف المتغيرات العالمية لـ TypeScript (تم تركها كما هي لضمان التوافق)
+// تعريف المتغيرات العالمية لـ TypeScript
 declare const __app_id: string | undefined;
 declare const __firebase_config: string | undefined;
 declare const __initial_auth_token: string | undefined;
 // =========================================================
 
-// 🟢 يتم سحب القيم هنا
 const appId = YOUR_FIREBASE_CONFIG.appId;
 const firebaseConfig = YOUR_FIREBASE_CONFIG; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// ✅ تعريف نوع بيانات الإعلان
+// ✅ نوع بيانات الإعلان
 interface Ad {
     id: string;
     name: string;
@@ -55,7 +54,7 @@ interface Ad {
     date: string; 
 }
 
-// مكون Modal مخصص لاستبدال confirm() و alert()
+// 🟣 مكون Modal مخصص
 interface ConfirmationModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -118,11 +117,12 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     );
 };
 
-// المكون الرئيسي لإدارة الإعلانات
+// =========================================================
+// 🔵 المكون الرئيسي
+// =========================================================
 const UploadedAdsPage = () => {
-    
     const [db, setDb] = useState<Firestore | null>(null);
-    const [authInstance, setAuthInstance] = useState<Auth | null>(null); // حفظ مثيل المصادقة
+    const [authInstance, setAuthInstance] = useState<Auth | null>(null);
     
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
@@ -131,17 +131,20 @@ const UploadedAdsPage = () => {
     const [error, setError] = useState('');
     const [isUpdating, setIsUpdating] = useState<string | null>(null); 
     
-    // حالة Modal التأكيد
+    // Modal التأكيد
     const [showModal, setShowModal] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
     const [modalTitle, setModalTitle] = useState('');
     const [modalIsAlert, setModalIsAlert] = useState(false);
     const [actionToConfirm, setActionToConfirm] = useState<(() => Promise<void>) | null>(null);
 
-    // 🔴 التعديل الأول: تصحيح مسار المجموعة ليتوافق مع مجموعة "ads" الرئيسية
+    // 🟣 حالات تعديل الإعلان
+    const [editingAd, setEditingAd] = useState<Ad | null>(null);
+    const [editForm, setEditForm] = useState({ name: "", price: "", category: "", description: "" });
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
     const ADS_COLLECTION_PATH = 'ads'; 
     
-    // دالة لفتح Modal التأكيد
     const openConfirmationModal = useCallback((message: string, title: string, action: () => Promise<void>, isAlert = false) => {
         setModalMessage(message);
         setModalTitle(title);
@@ -150,13 +153,52 @@ const UploadedAdsPage = () => {
         setShowModal(true);
     }, []);
 
-    // 1. تهيئة Firebase والمصادقة
+    // 🔹 فتح نافذة التعديل
+    const handleEdit = (ad: Ad) => {
+        setEditingAd(ad);
+        setEditForm({
+            name: ad.name,
+            price: ad.price,
+            category: ad.category,
+            description: ad.description
+        });
+        setIsEditModalOpen(true);
+    };
+
+    // 🔹 تأكيد التعديل
+    const handleConfirmEdit = async () => {
+        if (!db || !editingAd) return;
+        try {
+            await updateDoc(doc(db, ADS_COLLECTION_PATH, editingAd.id), {
+                name: editForm.name,
+                price: editForm.price,
+                category: editForm.category,
+                description: editForm.description
+            });
+            openConfirmationModal('تم تعديل الإعلان بنجاح ✅', 'نجاح', async () => {}, true);
+            setIsEditModalOpen(false);
+            setEditingAd(null);
+        } catch (error) {
+            console.error("Error updating ad:", error);
+            openConfirmationModal('حدث خطأ أثناء تعديل الإعلان.', 'خطأ', async () => {}, true);
+        }
+    };
+
+    // 🔹 تحديث الحقول أثناء الكتابة
+    const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setEditForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    // =========================================================
+    // 🔥 Firebase Auth
+    // =========================================================
     useEffect(() => {
         const app = initializeApp(firebaseConfig); 
         const dbInstance = getFirestore(app);
         const authInstance = getAuth(app);
         setDb(dbInstance);
-        setAuthInstance(authInstance); // حفظ المثيل
+        setAuthInstance(authInstance);
 
         const authenticate = async () => {
             try {
@@ -168,87 +210,73 @@ const UploadedAdsPage = () => {
                 setUserId(authInstance.currentUser?.uid || crypto.randomUUID());
                 setIsAuthReady(true);
             } catch (err) {
-                console.error("Firebase auth error, attempting anonymous sign-in:", err);
-                
-                // 🔴 التعديل الثاني: إزالة محاولة المصادقة المكررة داخل الـ catch
-                // تم إزالة الأسطر: 
-                // await signInAnonymously(authInstance); 
-                // setUserId(authInstance.currentUser?.uid || crypto.randomUUID());
-                // setIsAuthReady(true);
-                
-                // إذا فشلت المصادقة المباشرة، نظهر خطأ
-                setError('فشل في المصادقة. يرجى التأكد من تفعيل خاصية "Anonymous" في Firebase.');
+                console.error("Firebase auth error:", err);
+                setError('فشل في المصادقة. يرجى تفعيل "Anonymous" في Firebase.');
                 setLoading(false);
             }
         };
         authenticate();
     }, []); 
 
-    // 2. جلب الإعلانات من Firestore باستخدام onSnapshot
+    // =========================================================
+    // 🔍 جلب البيانات
+    // =========================================================
     useEffect(() => {
         if (!isAuthReady || !db) return;
-
         const adsCollectionRef = collection(db, ADS_COLLECTION_PATH);
         const adsQuery = query(adsCollectionRef);
-
         const unsubscribe = onSnapshot(adsQuery, (snapshot) => {
             const adsData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...(doc.data() as Omit<Ad, 'id' | 'date'>),
-                // تحويل timestamp إلى تاريخ مقروء
-                date: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate().toLocaleDateString('ar-EG') : 'تاريخ غير متوفر'
+                date: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate().toLocaleDateString('ar-EG') : 'غير متوفر'
             }));
             setAds(adsData as Ad[]);
             setLoading(false);
         }, (err) => {
             console.error("Error fetching ads: ", err);
-            setError('فشل في تحميل الإعلانات من قاعدة البيانات.');
+            setError('فشل في تحميل الإعلانات.');
             setLoading(false);
         });
-
         return () => unsubscribe();
-    }, [isAuthReady, db, ADS_COLLECTION_PATH]); 
+    }, [isAuthReady, db]); 
 
-    // 3. دالة تنفيذ حذف الإعلان
+    // =========================================================
+    // 🔴 الحذف + تغيير الحالة
+    // =========================================================
     const executeDelete = async (adId: string) => {
         if (!db) return;
         setIsUpdating(adId);
         try {
             await deleteDoc(doc(db, ADS_COLLECTION_PATH, adId));
         } catch (e) {
-            console.error("Error deleting document: ", e);
-            openConfirmationModal('فشل في حذف الإعلان. يرجى المحاولة مرة أخرى.', 'خطأ في الحذف', async () => {}, true);
+            console.error("Error deleting:", e);
+            openConfirmationModal('فشل في حذف الإعلان.', 'خطأ', async () => {}, true);
         } finally {
             setIsUpdating(null);
         }
     };
 
-    // 3. دالة لحذف الإعلان (تفتح الـ Modal)
     const handleDelete = (adId: string) => {
-        openConfirmationModal(
-            "هل أنت متأكد من رغبتك في حذف هذا الإعلان نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
-            'تأكيد الحذف',
-            () => executeDelete(adId)
-        );
+        openConfirmationModal("هل أنت متأكد من حذف هذا الإعلان نهائياً؟", 'تأكيد الحذف', () => executeDelete(adId));
     };
 
-    // 4. دالة لتغيير حالة البيع (انتهت الكمية)
     const handleToggleStatus = async (adId: string, currentStatus: boolean) => {
         if (!db) return;
         setIsUpdating(adId);
         try {
-            await updateDoc(doc(db, ADS_COLLECTION_PATH, adId), {
-                isSold: !currentStatus
-            });
+            await updateDoc(doc(db, ADS_COLLECTION_PATH, adId), { isSold: !currentStatus });
         } catch (e) {
-            console.error("Error updating document status: ", e);
-            openConfirmationModal('فشل في تحديث حالة الإعلان. يرجى المحاولة مرة أخرى.', 'خطأ في التحديث', async () => {}, true);
+            console.error("Error updating status:", e);
+            openConfirmationModal('فشل في تحديث الحالة.', 'خطأ', async () => {}, true);
         } finally {
             setIsUpdating(null);
         }
     };
 
-
+    // =========================================================
+    // 🖼️ واجهة العرض
+    // =========================================================
     if (error) {
         return <div className="p-8 text-center text-red-500 bg-red-900/20 rounded-xl m-4">خطأ: {error}</div>;
     }
@@ -263,130 +291,110 @@ const UploadedAdsPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-[#0a0022] to-[#150035] p-4 sm:p-8 font-[Inter] text-right text-white">
+        <div className="min-h-screen bg-gradient-to-b from-[#0a0022] to-[#150035] p-4 sm:p-8 text-right text-white">
             
-            {/* رأس الصفحة */}
             <header className="max-w-7xl mx-auto mb-10 pt-10 flex justify-between items-center">
                 <div>
-                    <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 text-white tracking-wider bg-gradient-to-r from-blue-400 to-pink-400 bg-clip-text text-transparent">
+                    <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 bg-gradient-to-r from-blue-400 to-pink-400 bg-clip-text text-transparent">
                         🗂️ إدارة الإعلانات المنشورة
                     </h1>
-                    <p className="text-gray-300 text-lg">
-                        عرض وتعديل ({ads.length} إعلان) وحذف إعلاناتك في الوقت الفعلي.
-                    </p>
+                    <p className="text-gray-300 text-lg">عرض وتعديل ({ads.length}) إعلان</p>
                 </div>
-                <a href="#dashboard" className="flex items-center text-blue-400 hover:text-blue-300 transition-colors text-base font-semibold">
+                <a href="#dashboard" className="flex items-center text-blue-400 hover:text-blue-300 transition-colors">
                     <ArrowLeftCircle className="w-5 h-5 mr-2" />
                     العودة للوحة التحكم
                 </a>
             </header>
             
-            {/* قائمة الإعلانات */}
             <section className="max-w-7xl mx-auto space-y-4">
                 {ads.length === 0 ? (
                     <div className='p-10 text-center bg-gray-800/50 rounded-xl'>
-                        <p className='text-xl text-yellow-400'>لا توجد إعلانات منشورة حالياً.</p>
-                        <p className='text-gray-400 mt-2'>يمكنك إضافة إعلان جديد من لوحة التحكم.</p>
+                        <p className='text-xl text-yellow-400'>لا توجد إعلانات حالياً.</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {ads.map((ad) => {
-                            const statusText = ad.isSold ? 'انتهت الكمية/تم البيع' : 'متوفر حالياً';
-                            const statusColor = ad.isSold ? 'bg-red-600' : 'bg-green-600';
-                            const isUpdatingThis = isUpdating === ad.id;
-
-                            return (
-                                <div 
-                                    key={ad.id} 
-                                    className={`flex flex-col md:flex-row items-start md:items-center justify-between p-5 rounded-2xl shadow-xl transition-all duration-300 ${
-                                        ad.isSold ? 'bg-gray-800/70 border border-red-500/50 opacity-70' : 'bg-gray-800 border border-blue-500/50 hover:shadow-blue-500/30'
-                                    }`}
-                                >
-                                    
-                                    {/* تفاصيل الإعلان */}
-                                    <div className="flex-1 min-w-0 mb-4 md:mb-0">
-                                        <div className="flex items-center mb-1">
-                                            <span className={`px-3 py-1 text-xs font-semibold rounded-full text-white ml-3 ${statusColor}`}>
-                                                {statusText}
-                                            </span>
-                                            <h3 className="text-xl font-bold text-white truncate">{ad.name}</h3>
-                                        </div>
-                                        <p className="text-lg font-semibold text-pink-400 mb-2 mr-2">{ad.price}</p>
-                                        <p className="text-sm text-gray-400">الفئة: {ad.category} | تاريخ النشر: {ad.date}</p>
-                                    </div>
-
-                                    {/* الأزرار */}
-                                    <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 sm:space-x-reverse w-full md:w-auto">
-                                        
-                                        {/* زر تغيير الحالة */}
-                                        <button
-                                            onClick={() => handleToggleStatus(ad.id, ad.isSold)}
-                                            disabled={isUpdatingThis}
-                                            className={`flex items-center justify-center px-4 py-2 rounded-full font-semibold text-sm transition-all duration-300 w-full sm:w-auto
-                                                ${ad.isSold 
-                                                    ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
-                                                    : 'bg-green-600 text-white hover:bg-green-700'}
-                                                ${isUpdatingThis && 'opacity-50 cursor-not-allowed'}`}
-                                        >
-                                            {isUpdatingThis ? (
-                                                <>
-                                                    <RotateCw className="w-4 h-4 ml-2 animate-spin" />
-                                                    جاري التحديث...
-                                                </>
-                                            ) : ad.isSold ? (
-                                                <>
-                                                    <CheckCircle className="w-4 h-4 ml-2" />
-                                                    إعادة تفعيل
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Clock className="w-4 h-4 ml-2" />
-                                                    انتهت الكمية/بيع
-                                                </>
-                                            )}
-                                        </button>
-
-                                        {/* زر حذف الإعلان */}
-                                        <button
-                                            onClick={() => handleDelete(ad.id)}
-                                            disabled={isUpdatingThis}
-                                            className={`flex items-center justify-center px-4 py-2 rounded-full font-semibold text-sm bg-red-600 text-white transition-all duration-300 w-full sm:w-auto hover:bg-red-700
-                                                ${isUpdatingThis && 'opacity-50 cursor-not-allowed'}`}
-                                        >
-                                            {isUpdatingThis ? (
-                                                <>
-                                                    <RotateCw className="w-4 h-4 ml-2 animate-spin" />
-                                                    جاري الحذف...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Trash2 className="w-4 h-4 ml-2" />
-                                                    حذف الإعلان
-                                                </>
-                                            )}
-                                        </button>
-
-                                    </div>
+                    ads.map(ad => {
+                        const isUpdatingThis = isUpdating === ad.id;
+                        return (
+                            <div key={ad.id} className="p-5 rounded-2xl bg-gray-800 border border-blue-500/50 flex flex-col md:flex-row items-start md:items-center justify-between">
+                                <div>
+                                    <h3 className="text-xl font-bold">{ad.name}</h3>
+                                    <p className="text-pink-400">{ad.price}</p>
+                                    <p className="text-gray-400 text-sm">الفئة: {ad.category}</p>
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
+                                    {/* زر تعديل */}
+                                    <button
+                                        onClick={() => handleEdit(ad)}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-semibold text-sm"
+                                    >
+                                        ✏️ تعديل الإعلان
+                                    </button>
+
+                                    {/* زر الحالة */}
+                                    <button
+                                        onClick={() => handleToggleStatus(ad.id, ad.isSold)}
+                                        disabled={isUpdatingThis}
+                                        className={`px-4 py-2 rounded-full font-semibold text-sm ${ad.isSold ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}`}
+                                    >
+                                        {ad.isSold ? 'إعادة تفعيل' : 'انتهت الكمية/بيع'}
+                                    </button>
+
+                                    {/* زر حذف */}
+                                    <button
+                                        onClick={() => handleDelete(ad.id)}
+                                        disabled={isUpdatingThis}
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-full font-semibold text-sm"
+                                    >
+                                        حذف الإعلان
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })
                 )}
             </section>
 
-            <footer className='text-center mt-10 text-gray-500 text-xs'>
-                <p>معرّف التطبيق: {appId} | معرّف المستخدم: {userId}</p>
-            </footer>
+            {/* 🟣 نافذة تعديل الإعلان */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setIsEditModalOpen(false)}>
+                    <div className="bg-gray-900 text-white p-6 rounded-xl shadow-2xl w-full max-w-lg border border-blue-500/50" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-2xl font-bold text-blue-400 mb-4 text-center">✏️ تعديل الإعلان</h2>
+                        <div className="space-y-3 text-right">
+                            <div>
+                                <label className="block text-sm mb-1">اسم الإعلان</label>
+                                <input type="text" name="name" value={editForm.name} onChange={handleEditInputChange} className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:ring-2 focus:ring-blue-400" />
+                            </div>
+                            <div>
+                                <label className="block text-sm mb-1">السعر</label>
+                                <input type="text" name="price" value={editForm.price} onChange={handleEditInputChange} className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:ring-2 focus:ring-blue-400" />
+                            </div>
+                            <div>
+                                <label className="block text-sm mb-1">الفئة</label>
+                                <input type="text" name="category" value={editForm.category} onChange={handleEditInputChange} className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:ring-2 focus:ring-blue-400" />
+                            </div>
+                            <div>
+                                <label className="block text-sm mb-1">الوصف</label>
+                                <textarea name="description" value={editForm.description} onChange={handleEditInputChange} className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:ring-2 focus:ring-blue-400 h-24" />
+                            </div>
+                        </div>
+                        <div className="flex justify-between mt-6">
+                            <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 rounded-full bg-gray-600 hover:bg-gray-700 font-semibold">
+                                إلغاء
+                            </button>
+                            <button onClick={handleConfirmEdit} className="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 font-semibold">
+                                تأكيد التعديل
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            {/* Modal التأكيد المخصص */}
+            {/* Modal التأكيد */}
             <ConfirmationModal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                onConfirm={async () => {
-                    if (actionToConfirm) {
-                        await actionToConfirm();
-                    }
-                }}
+                onConfirm={async () => { if (actionToConfirm) await actionToConfirm(); }}
                 message={modalMessage}
                 title={modalTitle}
                 isAlert={modalIsAlert}

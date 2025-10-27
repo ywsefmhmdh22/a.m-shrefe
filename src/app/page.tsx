@@ -1,4 +1,4 @@
-  'use client';
+ 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -19,14 +19,12 @@ import {
   Camera,
   ShoppingBag,
   ArrowUp,
-  CreditCard, // ✅ تم إضافة أيقونة البطاقة الائتمانية للتقسيط هنا
+  CreditCard,
 } from 'lucide-react';
 
-// ✅ استيراد مكتبات تسجيل الدخول بجوجل
 import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { app } from './lib/firebaseConfig';
 
-// ✅ نوع البيانات
 interface Ad {
   id: string;
   name: string;
@@ -35,21 +33,18 @@ interface Ad {
   image: string;
   description: string;
 }
-
-// ✅ قائمة الفئات (تمت إضافة فئة التقسيط)
 const CATEGORIES = [
   { name: 'الكل', key: 'all', icon: Zap },
-  { name: 'هواتف', key: 'هواتف', icon: Smartphone },
-  { name: 'لابتوبات', key: 'لابتوبات', icon: Laptop },
-  { name: 'كمبيوترات', key: 'كمبيوترات', icon: Monitor },
-  { name: 'كاميرات مراقبة', key: 'كاميرات مراقبة', icon: Camera },
-  { name: 'شاشات', key: 'شاشات', icon: Monitor },
-  { name: 'اكسسوارات', key: 'اكسسوارات', icon: Zap },
-  // 🆕 السطر الجديد لفئة الأجهزة المتاحة للتقسيط
-  { name: 'أجهزة متاحة للتقسيط', key: 'اجهزه متاحه للتقسيط', icon: CreditCard }, 
+  { name: 'هواتف', key: 'phones', icon: Smartphone },
+  { name: 'لابتوبات', key: 'laptops', icon: Laptop },
+  { name: 'كمبيوترات', key: 'computers', icon: Monitor },
+  { name: 'كاميرات مراقبة', key: 'cams', icon: Camera },
+  { name: 'شاشات', key: 'screens', icon: Monitor },
+  { name: 'إكسسوارات', key: 'accessories', icon: Zap },
+  { name: 'أجهزة متاحة للتقسيط', key: 'installments', icon: CreditCard },
 ];
 
-// ✅ القائمة الجانبية
+ 
 const SideMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -103,7 +98,6 @@ const SideMenu: React.FC = () => {
   );
 };
 
-// ✅ الصفحة الرئيسية
 const HomePage: React.FC = () => {
   const [allAds, setAllAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +132,6 @@ const HomePage: React.FC = () => {
     fetchAds();
   }, []);
 
-  // ✅ دالة تسجيل الدخول بجوجل
   const handleGoogleLogin = async (adId: string) => {
     try {
       const auth = getAuth(app);
@@ -146,8 +139,6 @@ const HomePage: React.FC = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       console.log('✅ تم تسجيل الدخول:', user.displayName, user.email);
-
-      // بعد التسجيل التلقائي يدخل المستخدم لصفحة الدفع
       window.location.href = `/checkout?adId=${adId}`;
     } catch (error) {
       console.error('❌ خطأ أثناء تسجيل الدخول بجوجل:', error);
@@ -155,10 +146,14 @@ const HomePage: React.FC = () => {
     }
   };
 
+  // ✅ تم تعديل دالة التصفية لتعمل حتى لو كان الاسم مختلف قليلاً
   const filteredAds = useMemo(() => {
     if (selectedCategory === 'all') return allAds;
     const filterKey = selectedCategory.toLowerCase().trim();
-    return allAds.filter((ad) => ad.category.toLowerCase().trim() === filterKey);
+    return allAds.filter(
+      (ad) =>
+        ad.category && ad.category.toLowerCase().includes(filterKey)
+    );
   }, [allAds, selectedCategory]);
 
   return (
@@ -168,7 +163,6 @@ const HomePage: React.FC = () => {
 
       <SideMenu />
 
-      {/* ✅ الشعار والعنوان */}
       <div className="absolute top-6 left-6 flex flex-col items-center space-y-2">
         <Image
           src="/logo.jpg"
@@ -230,7 +224,6 @@ const HomePage: React.FC = () => {
               const isExpanded = expandedAdId === ad.id;
               return (
                 <div key={ad.id} className="col-span-1 flex flex-col space-y-3">
-                  {/* ✅ كارت الإعلان */}
                   <div
                     className={`relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,200,255,0.3)] group transform transition-all duration-700 hover:scale-[1.03] hover:shadow-[0_0_80px_rgba(255,0,255,0.5)] ${
                       isExpanded ? 'shadow-[0_0_80px_rgba(255,0,255,0.5)]' : ''
@@ -253,7 +246,6 @@ const HomePage: React.FC = () => {
                         <p className="text-xl sm:text-2xl font-semibold text-pink-300">{ad.price}</p>
                       </div>
 
-                      {/* ✅ أزرار التحكم */}
                       <div className="flex flex-col space-y-3 mt-4 sm:mt-0 sm:items-end">
                         <button
                           onClick={() => handleGoogleLogin(ad.id)}
@@ -300,7 +292,6 @@ const HomePage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* ✅ التفاصيل أسفل الكارت */}
                   {isExpanded && (
                     <div className="p-6 bg-[#1a0035] rounded-3xl border-2 border-purple-500 shadow-[0_0_40px_rgba(255,0,255,0.4)] animate-slideDown">
                       <h4 className="text-xl font-bold text-purple-400 mb-3 border-b border-purple-400/50 pb-2">
