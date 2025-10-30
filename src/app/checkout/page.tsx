@@ -1,9 +1,9 @@
-  'use client';
+ 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { db, app } from '@/app/lib/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc } from 'firebase/firestore'; // ✅ أضفنا addDoc, collection
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import Image from 'next/image';
 import {
@@ -14,6 +14,7 @@ import {
   CreditCard,
   CheckCircle,
   Loader2,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -33,18 +34,21 @@ function CheckoutContent() {
   const [ad, setAd] = useState<Ad | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [userEmail, setUserEmail] = useState<string | null>(null); // ✅ لحفظ إيميل المستخدم
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+
   const [formData, setFormData] = useState({
     customerName: '',
     phone: '',
     address: '',
     paymentMethod: 'cashOnDelivery',
   });
+
   const [submissionStatus, setSubmissionStatus] = useState<
     'idle' | 'loading' | 'success' | 'failed'
   >('idle');
 
-  // ✅ متابعة المستخدم الحالي (علشان نجيب الإيميل بتاعه)
+  // ✅ متابعة المستخدم الحالي
   useEffect(() => {
     const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -54,7 +58,7 @@ function CheckoutContent() {
     return () => unsubscribe();
   }, []);
 
-  // 🟣 جلب بيانات الإعلان من Firestore
+  // ✅ جلب بيانات الإعلان
   useEffect(() => {
     if (!adId) {
       setError('❌ لم يتم تحديد رقم الإعلان.');
@@ -84,11 +88,9 @@ function CheckoutContent() {
     fetchAd();
   }, [adId]);
 
-  // 🟣 تحديث حقول النموذج
+  // ✅ تحديث بيانات النموذج
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setFormData({
       ...formData,
@@ -96,7 +98,7 @@ function CheckoutContent() {
     });
   };
 
-  // 🟣 إرسال الطلب إلى API Route
+  // ✅ عند تأكيد الشراء
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ad) return;
@@ -105,6 +107,7 @@ function CheckoutContent() {
     setError('');
 
     try {
+      // إرسال الطلب إلى API
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -115,12 +118,21 @@ function CheckoutContent() {
           ...formData,
           orderDate: new Date().toISOString(),
           status: 'Pending',
-          userEmail, // ✅ هنا أضفنا البريد الإلكتروني للمستخدم
+          userEmail,
         }),
       });
 
       if (!response.ok) throw new Error('فشل في إرسال الطلب');
 
+      // ✅ تسجيل الطلب في Firestore لتحديث الإحصائيات
+      await addDoc(collection(db, 'orders'), {
+        price: Number(ad.price),
+        createdAt: new Date().toISOString(),
+        status: 'completed',
+        userEmail,
+      });
+
+      console.log('✅ تم حفظ العملية في قاعدة البيانات بنجاح');
       setSubmissionStatus('success');
     } catch (err) {
       console.error('خطأ في تأكيد الشراء:', err);
@@ -164,9 +176,7 @@ function CheckoutContent() {
         </h2>
         <p className="text-lg text-gray-300 mb-8 max-w-lg">
           سنتواصل معك قريباً على رقم{' '}
-          <span className="font-bold text-yellow-300">
-            {formData.phone}
-          </span>{' '}
+          <span className="font-bold text-yellow-300">{formData.phone}</span>{' '}
           لتأكيد تفاصيل الشراء وعملية الدفع. شكراً لثقتك بنا.
         </p>
         <Link
@@ -179,7 +189,7 @@ function CheckoutContent() {
     );
   }
 
-  // 🟣 واجهة صفحة الدفع الرئيسية
+  // 🟣 واجهة صفحة الدفع
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050014] to-[#18003a] text-white p-4 sm:p-8">
       <div className="max-w-4xl mx-auto py-12">
@@ -187,7 +197,7 @@ function CheckoutContent() {
           🛒 صفحة تأكيد الشراء
         </h1>
 
-        {/* 🟣 تفاصيل المنتج */}
+        {/* تفاصيل المنتج */}
         <div className="bg-[#1a0035] p-6 rounded-2xl shadow-xl mb-8 border border-purple-700/50">
           <h2 className="text-2xl font-bold mb-4 text-blue-300 border-b border-blue-500/50 pb-2 flex items-center">
             <ShoppingCart className="w-6 h-6 ml-2" /> تفاصيل المنتج
@@ -198,21 +208,21 @@ function CheckoutContent() {
               alt={ad.name}
               width={120}
               height={120}
-              className="rounded-lg object-cover shadow-lg border-2 border-pink-500"
+              className="rounded-lg object-cover shadow-lg border-2 border-pink-500 cursor-pointer transition-transform duration-300 hover:scale-[1.05]"
+              unoptimized
+              onClick={() => setShowImageModal(true)}
             />
             <div>
               <p className="text-xl font-semibold">{ad.name}</p>
               <p className="text-lg font-bold text-pink-400 mt-1">
                 السعر: {ad.price}
               </p>
-              <p className="text-sm text-gray-400 mt-2">
-                الفئة: {ad.category}
-              </p>
+              <p className="text-sm text-gray-400 mt-2">الفئة: {ad.category}</p>
             </div>
           </div>
         </div>
 
-        {/* 🟣 نموذج بيانات العميل */}
+        {/* نموذج العميل */}
         <form
           onSubmit={handleSubmit}
           className="bg-[#1a0035] p-6 rounded-2xl shadow-xl border border-blue-700/50"
@@ -221,7 +231,6 @@ function CheckoutContent() {
             بيانات العميل وطريقة الدفع
           </h2>
 
-          {/* 🟡 الحقول */}
           <div className="space-y-6 mb-8">
             <div className="relative">
               <User className="absolute top-3 right-3 w-5 h-5 text-blue-400" />
@@ -255,7 +264,7 @@ function CheckoutContent() {
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                placeholder="العنوان التفصيلي (المحافظة، المنطقة، الشارع، رقم المنزل)"
+                placeholder="العنوان التفصيلي"
                 required
                 rows={3}
                 className="w-full p-3 pr-10 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white placeholder-gray-400 transition resize-none"
@@ -263,7 +272,6 @@ function CheckoutContent() {
             </div>
           </div>
 
-          {/* 🟣 طرق الدفع */}
           <h3 className="text-xl font-semibold mb-4 text-blue-200 flex items-center">
             <CreditCard className="w-5 h-5 ml-2" /> اختيار وسيلة الدفع:
           </h3>
@@ -283,9 +291,7 @@ function CheckoutContent() {
                 onChange={handleChange}
                 className="form-radio h-5 w-5 text-green-500 ml-3"
               />
-              <span className="text-lg font-medium">
-                💰 الدفع عند الاستلام
-              </span>
+              <span className="text-lg font-medium">💰 الدفع عند الاستلام</span>
             </label>
 
             <label
@@ -309,12 +315,11 @@ function CheckoutContent() {
             </label>
           </div>
 
-          {/* 🟢 زر تأكيد الشراء */}
           <button
             type="submit"
             disabled={submissionStatus === 'loading'}
             className="w-full py-3 mt-4 text-lg font-semibold rounded-full transition-all duration-300 shadow-xl disabled:opacity-60 disabled:cursor-not-allowed
-                       bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white flex items-center justify-center"
+                        bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white flex items-center justify-center"
           >
             {submissionStatus === 'loading' ? (
               <>
@@ -329,6 +334,35 @@ function CheckoutContent() {
           {error && <p className="text-red-400 text-center mt-4">{error}</p>}
         </form>
       </div>
+
+      {/* نافذة الصورة المكبرة */}
+      {showImageModal && ad?.image && (
+        <div
+          className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center backdrop-blur-sm"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div
+            className="relative max-w-4xl w-full px-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white rounded-full p-3 shadow-lg z-10 transition-transform duration-300 hover:scale-110"
+              aria-label="إغلاق الصورة المكبرة"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <Image
+              src={ad.image || '/default.jpg'}
+              alt={ad.name}
+              width={1200}
+              height={900}
+              className="rounded-2xl w-full h-auto object-contain border-4 border-blue-500 shadow-[0_0_40px_rgba(0,200,255,0.6)] max-h-[90vh]"
+              unoptimized
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

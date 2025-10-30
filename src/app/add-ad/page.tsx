@@ -16,13 +16,24 @@ interface FormData {
   title: string;
   description: string;
   price: string;
-  category: string;
+  category: string; // الفئة الرئيسية المختارة
+  subCategory: string; // 🌟 الفئة الفرعية (مهمة للإكسسوارات)
 }
 
 interface ImageFileWithPreview {
   file: File;
   preview: string;
 }
+
+// 🌟 تعريف الفئات الفرعية للإكسسوارات
+const ACCESSORIES_SUB_CATEGORIES = [
+  { value: "phones", label: "📱 إكسسوارات هواتف" },
+  { value: "laptop", label: "💻 إكسسوارات لابتوب" },
+  { value: "computer", label: "🖥 إكسسوارات كمبيوتر" },
+  { value: "cams", label: "📹 إكسسوارات كاميرات" },
+  { value: "screens", label: "📺 إكسسوارات شاشات" },
+  // يمكنك إضافة فئات فرعية أخرى هنا
+];
 
 export default function AddAdPage() {
   const router = useRouter();
@@ -31,12 +42,16 @@ export default function AddAdPage() {
     title: "",
     description: "",
     price: "",
-    category: "phones",
+    category: "phones", // الافتراضية
+    subCategory: ACCESSORIES_SUB_CATEGORIES[0].value, // 🌟 الافتراضية للفرعية
   });
 
   const [images, setImages] = useState<ImageFileWithPreview[]>([]);
   const [loading, setLoading] = useState(false);
   const MAX_IMAGES = 4;
+
+  // 🌟 هل الفئة الرئيسية المختارة حالياً هي إكسسوارات؟
+  const isAccessories = formData.category === "accessories";
 
   useEffect(() => {
     setIsClient(true);
@@ -49,10 +64,25 @@ export default function AddAdPage() {
     if (name === "price") {
       const numericValue = value.replace(/[^0-9.]/g, "");
       setFormData({ ...formData, [name]: numericValue });
+    } else if (name === "category") {
+      // عند تغيير الفئة الرئيسية
+      setFormData({ 
+          ...formData, 
+          [name]: value,
+          // 💡 إعادة تعيين الفئة الفرعية: إذا كانت الفئة الجديدة هي 'accessories'، نترك قيمة subCategory الحالية،
+          // وإلا نقوم بمسحها لضمان عدم وجود فئة فرعية لفئة رئيسية أخرى.
+          subCategory: value === 'accessories' ? formData.subCategory : '', 
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
+
+  // دالة تغيير الفئة الفرعية
+  const handleSubCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData({ ...formData, subCategory: e.target.value });
+  };
+
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isClient) return;
@@ -66,6 +96,7 @@ export default function AddAdPage() {
         }));
 
       setImages((prevImages) => [...prevImages, ...newFiles]);
+      e.target.value = ''; // 🌟 مسح الحقل للسماح برفع نفس الملفات مرة أخرى إذا لزم الأمر
     }
   };
 
@@ -80,8 +111,12 @@ export default function AddAdPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.description || !formData.category || images.length === 0) {
-      toast.error("من فضلك املأ جميع الحقول الأساسية وأضف صورة واحدة على الأقل");
+    // 🎯 التعديل الحاسم: تحديد الفئة التي سيتم حفظها في قاعدة البيانات
+    // إذا كانت الفئة الرئيسية هي إكسسوارات، نحفظ الفئة الفرعية. وإلا، نحفظ الفئة الرئيسية.
+    const finalCategory = isAccessories ? formData.subCategory : formData.category;
+
+    if (!formData.title || !formData.description || !finalCategory || images.length === 0) {
+      toast.error("من فضلك املأ جميع الحقول الأساسية (بما في ذلك الفئة التفصيلية) وأضف صورة واحدة على الأقل");
       return;
     }
 
@@ -109,8 +144,9 @@ export default function AddAdPage() {
         name: formData.title,
         description: formData.description,
         price: priceToSave,
-        images: uploadedImageUrls, // ✅ بدل image → images array
-        category: formData.category.toLowerCase().trim(),
+        images: uploadedImageUrls,
+        // 💡 حفظ الفئة التفصيلية في حقل category
+        category: finalCategory.toLowerCase().trim(), 
         createdAt: serverTimestamp(),
       });
 
@@ -178,7 +214,8 @@ export default function AddAdPage() {
               ج.م
             </span>
           </div>
-
+          
+          {/* 🌟 حقل الفئة الرئيسية */}
           <select
             name="category"
             value={formData.category}
@@ -187,13 +224,35 @@ export default function AddAdPage() {
             required
           >
             <option value="phones">📱 هواتف</option>
-            <option value="laptops">💻 لابتوبات</option>
-            <option value="computers">🖥 كمبيوترات</option>
-            <option value="accessories">🎧 إكسسوارات</option>
+            <option value="laptop">💻 لابتوب</option>
+            <option value="computer">🖥 كمبيوتر</option>
             <option value="screens">📺 شاشات</option>
             <option value="cams">📹 كاميرات مراقبة</option>
             <option value="installments">💳 أجهزة متاحة للتقسيط</option>
+            <option value="accessories">🎧 إكسسوارات</option> {/* 🎯 فئة الإكسسوارات */}
           </select>
+          
+          {/* 🌟 حقل الفئة الفرعية للإكسسوارات (يظهر فقط عند اختيار "إكسسوارات") */}
+          {isAccessories && (
+            <motion.select
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              name="subCategory"
+              value={formData.subCategory}
+              onChange={handleSubCategoryChange}
+              className="w-full p-3 rounded-xl bg-gray-700 border border-amber-400 focus:ring-2 focus:ring-amber-400 outline-none mt-4"
+              required
+            >
+              <option value="">-- اختر الفئة التفصيلية للإكسسوارات --</option>
+              {ACCESSORIES_SUB_CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </motion.select>
+          )}
+
 
           <hr className="border-gray-700" />
 

@@ -44,7 +44,7 @@ const dashboardActions: ActionCardProps[] = [
 		icon: BarChart,
 		color: 'from-yellow-500 to-amber-600',
 		shadow: 'shadow-yellow-500/50',
-		href: '#analytics', // رابط افتراضي
+		href: 'analytics', // رابط افتراضي
 	},
 ];
 
@@ -114,7 +114,7 @@ const AdminDashboard = () => {
 
 			{/* زر العودة للواجهة العامة */}
 			<div className="max-w-7xl mx-auto mt-12 text-center">
-				<a href="#home" className="inline-flex items-center text-lg font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+				<a href="#page" className="inline-flex items-center text-lg font-semibold text-blue-400 hover:text-blue-300 transition-colors">
 					العودة إلى واجهة العرض العامة
 					<ArrowLeftCircle className="w-5 h-5 mr-2" />
 				</a>
