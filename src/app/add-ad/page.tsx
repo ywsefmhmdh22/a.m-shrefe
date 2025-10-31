@@ -224,8 +224,8 @@ export default function AddAdPage() {
             required
           >
             <option value="phones">📱 هواتف</option>
-            <option value="laptop">💻 لابتوب</option>
-            <option value="computer">🖥 كمبيوتر</option>
+            <option value="laptops">💻 لابتوب</option>
+            <option value="computers">🖥 كمبيوتر</option>
             <option value="screens">📺 شاشات</option>
             <option value="cams">📹 كاميرات مراقبة</option>
             <option value="installments">💳 أجهزة متاحة للتقسيط</option>
