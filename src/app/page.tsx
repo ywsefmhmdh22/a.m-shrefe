@@ -416,10 +416,10 @@ const HomePage: React.FC = () => {
         if (newCategory === 'accessories') {
             // إذا كانت 'accessories' مختارة بالفعل، نقلب حالة القائمة المنسدلة
             if (selectedCategory === 'accessories') {
-                 // إذا لم تكن القائمة المنسدلة مفتوحة، نختار تلقائياً "كل الإكسسوارات" قبل الفتح
-                if (!isAccessoriesDropdownOpen) {
+                   // إذا لم تكن القائمة المنسدلة مفتوحة، نختار تلقائياً "كل الإكسسوارات" قبل الفتح
+                 if (!isAccessoriesDropdownOpen) {
                     setSelectedSubCategory('accessories'); 
-                }
+                 }
                 setIsAccessoriesDropdownOpen(prev => !prev);
             } else {
                 // إذا لم تكن 'accessories' مختارة، نختارها ونفتح القائمة المنسدلة على "كل الإكسسوارات"
@@ -631,67 +631,64 @@ const HomePage: React.FC = () => {
                                                         // 💎 لون نص الزر: أزرق داكن
                                                         className="flex items-center text-sm font-semibold text-blue-700 hover:text-blue-900 transition duration-300 mt-2 sm:mt-0"
                                                     >
-                                                        {isExpanded ? 'إخفاء التفاصيل' : 'شاهد التفاصيل'}
-                                                        <ExternalLink className={`w-4 h-4 mr-1 transition-transform duration-500 ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
+                                                        {isExpanded ? 'إخفاء التفاصيل' : 'شاهد التفاصيل الكاملة'}
+                                                        {isExpanded ? <ArrowUp className="w-4 h-4 mr-2 transform rotate-180" /> : <ArrowUp className="w-4 h-4 mr-2" />}
                                                     </span>
                                                 </button>
+
                                             </div>
                                         </div>
-                                        
-                                        {/* 💡 شريط الصور المصغرة */}
-                                        {hasImagesToShowStrip && (
-                                            <div className="absolute top-2 right-2 flex flex-col space-y-2 p-2 bg-black/50 rounded-lg backdrop-blur-sm">
-                                                {ad.images.map((imageUrl, imgIndex) => (
-                                                    <div
-                                                        key={imgIndex}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation(); // منع فتح التفاصيل عند الضغط على الصورة المصغرة
-                                                            setActiveImageInAd({ ...activeImageInAd, [ad.id]: imageUrl });
-                                                        }}
-                                                        // 💎 حدود الصور المصغرة: أزرق سماوي
-                                                        className={`w-12 h-12 rounded-lg overflow-hidden border-2 cursor-pointer transition-all duration-300 ${
-                                                            imageUrl === mainImageSrc ? 'border-sky-400 scale-110 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'
-                                                        }`}
-                                                    >
-                                                        <Image
-                                                            src={imageUrl}
-                                                            alt={`صورة مصغرة ${imgIndex + 1}`}
-                                                            width={50}
-                                                            height={50}
-                                                            className="w-full h-full object-cover"
-                                                            unoptimized
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                        
-                                        {/* 💡 زر التواصل المباشر (Whatsapp) */}
-                                        <a 
-                                            href={`${whatsappLink} ${ad.name} بسعر ${ad.price}`}
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            // 💎 زر الواتساب: أخضر داكن (لتجنب التداخل مع الأزرق/السماوي)
-                                            className="absolute top-2 left-2 p-3 bg-green-600 hover:bg-green-700 text-white rounded-full transition-transform duration-300 hover:scale-110 shadow-lg z-10"
-                                            aria-label={`تواصل واتساب للاستفسار عن ${ad.name}`}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <MessageSquare className="w-5 h-5" />
-                                        </a>
-
                                     </div>
-                                    
-                                    {/* تفاصيل موسعة (الوصف) */}
+
+                                    {/* 💡 شريط الصور المصغرة عند وجود أكثر من صورة */}
+                                    {hasImagesToShowStrip && (
+                                        <div className="flex justify-start space-x-2 space-x-reverse overflow-x-auto p-2 bg-white/70 rounded-xl shadow-inner border border-sky-200">
+                                            {ad.images.map((image, imageIndex) => (
+                                                <div
+                                                    key={imageIndex}
+                                                    onClick={() => setActiveImageInAd(prev => ({ ...prev, [ad.id]: image }))}
+                                                    className={`relative w-16 h-16 min-w-[4rem] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 shadow-md ${
+                                                        // 💎 إطار سماوي/أزرق للصورة النشطة
+                                                        mainImageSrc === image
+                                                            ? 'border-3 border-blue-600 ring-2 ring-sky-400 scale-105'
+                                                            : 'border border-gray-300 hover:border-blue-400'
+                                                    }`}
+                                                >
+                                                    <Image
+                                                        src={image}
+                                                        alt={`${ad.name} - صورة ${imageIndex + 1}`}
+                                                        layout="fill"
+                                                        objectFit="cover"
+                                                        unoptimized={true}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+
+                                    {/* 🌟 التفاصيل الموسعة */}
                                     <div
-                                        // 💎 خلفية التفاصيل الموسعة: أزرق فاتح/سماوي
-                                        className={`overflow-hidden transition-all duration-500 ease-in-out bg-sky-50 rounded-2xl shadow-xl p-4 border border-sky-300 ${
-                                            isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 p-0'
+                                        // 💎 خلفية التفاصيل الموسعة: أزرق داكن مع حدود وظل نيون أزرق
+                                        className={`overflow-hidden transition-max-height duration-700 ease-in-out ${
+                                            isExpanded ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'
                                         }`}
-                                        style={{ padding: isExpanded ? '1rem' : '0' }}
+                                        style={{ maxHeight: isExpanded ? '400px' : '0' }}
                                     >
-                                        <p className="text-gray-800 leading-relaxed whitespace-pre-line text-sm">
-                                            {ad.description || 'لا يوجد وصف مفصل لهذا المنتج حالياً.'}
-                                        </p>
+                                        <div className="p-4 rounded-xl bg-blue-900/95 text-white shadow-[0_0_30px_rgba(0,100,255,0.4)] border border-sky-400">
+                                            <h4 className="text-lg font-bold mb-3 border-b border-sky-500/50 pb-1 text-sky-300">وصف المنتج الكامل</h4>
+                                            <p className="text-sm leading-relaxed text-gray-200 whitespace-pre-wrap">{ad.description}</p>
+                                            
+                                            {/* زر التواصل عبر واتساب */}
+                                            <Link href={whatsappLink} target="_blank" passHref>
+                                                <div
+                                                    // 💎 زر واتساب: أخضر نيون مع ظل أخضر
+                                                    className="flex items-center justify-center mt-4 p-3 bg-green-500/90 text-black rounded-full font-bold transition-all duration-300 hover:bg-green-400 shadow-[0_0_20px_rgba(0,255,0,0.4)] cursor-pointer">
+                                                    <ExternalLink className="w-5 h-5 ml-2" />
+                                                    تواصل معنا مباشرة عبر واتساب
+                                                </div>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -699,16 +696,25 @@ const HomePage: React.FC = () => {
                     </div>
                 )}
             </section>
-            
+
             {/* 🌟 نافذة معاينة الصور (المودال) */}
             {modalImages && (
-                <ImageGalleryModal 
+                <ImageGalleryModal
                     images={modalImages}
                     initialIndex={modalInitialIndex}
                     onClose={closeImageModal}
                 />
             )}
-            
+
+            {/* زر العودة للأعلى (Top) */}
+            <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                // 💎 لون الزر: أزرق داكن مع ظل نيون أزرق
+                className="fixed bottom-24 left-4 z-40 p-3 rounded-full bg-blue-800 text-white shadow-[0_0_25px_rgba(0,150,255,0.7)] transition-all duration-500 hover:bg-blue-600 hover:scale-110"
+                aria-label="العودة لأعلى الصفحة"
+            >
+                <ArrowUp className="w-6 h-6" />
+            </button>
         </main>
     );
 };

@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 import React from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
@@ -6,6 +6,17 @@ import { ShieldCheck } from "lucide-react";
 export default function PrivacyPolicyPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 py-16 px-6">
+      
+      {/* ========================================================== */}
+      {/* سكريبت Google AdSense - تم إضافته هنا */}
+      {/* ========================================================== */}
+      <script 
+        async 
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2620230909210931"
+        crossOrigin="anonymous" 
+      ></script>
+      {/* ========================================================== */}
+      
       <div className="max-w-4xl mx-auto">
         <motion.div
           className="text-center mb-10"

@@ -1,11 +1,11 @@
  'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { db, app } from '@/app/lib/firebaseConfig';
-import { doc, getDoc, collection, addDoc } from 'firebase/firestore'; // ✅ أضفنا addDoc, collection
+import { useSearchParams } from 'next/navigation'; // 🚨 الاعتماد الأصلي على Next.js
+import { db, app } from '@/app/lib/firebaseConfig'; // 🚨 الاعتماد الأصلي على مسار Firebase
+import { doc, getDoc, collection, addDoc } from 'firebase/firestore'; 
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import Image from 'next/image';
+import Image from 'next/image'; // 🚨 الاعتماد الأصلي على Next.js Image
 import {
   ShoppingCart,
   User,
@@ -15,8 +15,9 @@ import {
   CheckCircle,
   Loader2,
   X,
+  ArrowLeft,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from 'next/link'; // 🚨 الاعتماد الأصلي على Next.js Link
 
 interface Ad {
   id: string;
@@ -48,6 +49,22 @@ function CheckoutContent() {
     'idle' | 'loading' | 'success' | 'failed'
   >('idle');
 
+  // 1. 💰 إضافة سكريبت Google AdSense بشكل ديناميكي (كما طلبت)
+  useEffect(() => {
+    console.log("🚀 Injecting AdSense script...");
+    const scriptId = 'adsense-script-checkout';
+    
+    // منع إضافة السكريبت أكثر من مرة
+    if (document.getElementById(scriptId)) return;
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2620230909210931";
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    document.head.appendChild(script);
+  }, []);
+
   // ✅ متابعة المستخدم الحالي
   useEffect(() => {
     const auth = getAuth(app);
@@ -69,7 +86,8 @@ function CheckoutContent() {
     const fetchAd = async () => {
       try {
         setLoading(true);
-        const docRef = doc(db, 'ads', adId);
+        // نستخدم مسار Firebase الأصلي (افتراضاً أنه ads)
+        const docRef = doc(db, 'ads', adId); 
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -107,7 +125,7 @@ function CheckoutContent() {
     setError('');
 
     try {
-      // إرسال الطلب إلى API
+      // إرسال الطلب إلى API (المنطق الأصلي)
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,7 +142,7 @@ function CheckoutContent() {
 
       if (!response.ok) throw new Error('فشل في إرسال الطلب');
 
-      // ✅ تسجيل الطلب في Firestore لتحديث الإحصائيات
+      // ✅ تسجيل الطلب في Firestore لتحديث الإحصائيات (المنطق الأصلي)
       await addDoc(collection(db, 'orders'), {
         price: Number(ad.price),
         createdAt: new Date().toISOString(),
@@ -144,7 +162,7 @@ function CheckoutContent() {
   // 🟡 شاشة التحميل
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white" dir="rtl">
         <Loader2 className="w-8 h-8 animate-spin text-blue-400 ml-2" />
         <p className="text-lg">جارٍ تحميل بيانات الإعلان...</p>
       </div>
@@ -154,13 +172,13 @@ function CheckoutContent() {
   // 🟡 شاشة الخطأ
   if (error || !ad) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white p-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white p-6 text-center" dir="rtl">
         <p className="text-xl text-red-500 mb-4">{error}</p>
         <Link
           href="/"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full transition duration-300"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full transition duration-300 flex items-center"
         >
-          العودة للصفحة الرئيسية
+            <ArrowLeft className="w-5 h-5 ml-2" /> العودة للصفحة الرئيسية
         </Link>
       </div>
     );
@@ -169,7 +187,7 @@ function CheckoutContent() {
   // 🟢 شاشة نجاح الطلب
   if (submissionStatus === 'success') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white p-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white p-6 text-center" dir="rtl">
         <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
         <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">
           تم تأكيد طلبك بنجاح!
@@ -181,9 +199,9 @@ function CheckoutContent() {
         </p>
         <Link
           href="/"
-          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-full transition duration-300 shadow-lg"
+          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-full transition duration-300 shadow-lg flex items-center"
         >
-          العودة للمتجر
+            <ArrowLeft className="w-5 h-5 ml-2" /> العودة للمتجر
         </Link>
       </div>
     );
@@ -191,7 +209,7 @@ function CheckoutContent() {
 
   // 🟣 واجهة صفحة الدفع
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#050014] to-[#18003a] text-white p-4 sm:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#050014] to-[#18003a] text-white p-4 sm:p-8" dir="rtl">
       <div className="max-w-4xl mx-auto py-12">
         <h1 className="text-4xl font-extrabold text-center mb-10 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">
           🛒 صفحة تأكيد الشراء
@@ -319,7 +337,7 @@ function CheckoutContent() {
             type="submit"
             disabled={submissionStatus === 'loading'}
             className="w-full py-3 mt-4 text-lg font-semibold rounded-full transition-all duration-300 shadow-xl disabled:opacity-60 disabled:cursor-not-allowed
-                        bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white flex items-center justify-center"
+                       bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white flex items-center justify-center"
           >
             {submissionStatus === 'loading' ? (
               <>
@@ -333,6 +351,21 @@ function CheckoutContent() {
 
           {error && <p className="text-red-400 text-center mt-4">{error}</p>}
         </form>
+
+        {/* 💰 حاوية إعلانية فارغة (ستُملأ بواسطة سكريبت AdSense) */}
+        <div className="mt-8 p-4 bg-[#2b0057] border border-gray-700/50 rounded-xl text-center">
+            <p className="text-sm text-gray-400 mb-2">مساحة إعلانية (يتم تحميلها بواسطة AdSense)</p>
+            <ins 
+                className="adsbygoogle"
+                style={{ display: 'block', width: '100%', minHeight: '100px', backgroundColor: '#3c007c' }}
+                data-ad-client="ca-pub-2620230909210931"
+                data-ad-slot="1234567890" // استخدم رقم الإعلان الخاص بك
+                data-ad-format="auto"
+                data-full-width-responsive="true">
+            </ins>
+            {/* تشغيل الإعلانات يدوياً بعد إضافة السكريبت */}
+            <script dangerouslySetInnerHTML={{ __html: "(adsbygoogle = window.adsbygoogle || []).push({});" }} />
+        </div>
       </div>
 
       {/* نافذة الصورة المكبرة */}
@@ -369,9 +402,10 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
+    // يجب استخدام Suspense في Next.js عند استخدام useSearchParams
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#050014] to-[#18003a] text-white" dir="rtl">
           <Loader2 className="w-8 h-8 animate-spin text-blue-400 ml-2" />
           <p className="text-lg">جاري تحميل الصفحة...</p>
         </div>

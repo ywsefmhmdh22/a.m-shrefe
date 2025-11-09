@@ -460,6 +460,17 @@ const UploadedAdsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0022] to-[#150035] p-4 sm:p-8 text-right text-white">
+      
+      {/* ========================================================== */}
+      {/* سكريبت Google AdSense - تم إضافته هنا */}
+      {/* ========================================================== */}
+      <script 
+        async 
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2620230909210931"
+        crossOrigin="anonymous" 
+      ></script>
+      {/* ========================================================== */}
+      
       <header className="max-w-7xl mx-auto mb-10 pt-10 flex justify-between items-center">
         <div>
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 bg-gradient-to-r from-blue-400 to-pink-400 bg-clip-text text-transparent">

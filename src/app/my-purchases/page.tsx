@@ -121,6 +121,16 @@ const MyPurchasesPage: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#050014] via-[#0d0024] to-[#18003a] text-white p-6">
+      {/* ========================================================== */}
+      {/* سكريبت Google AdSense - تم إضافته هنا */}
+      {/* ========================================================== */}
+      <script 
+        async 
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2620230909210931"
+        crossOrigin="anonymous" 
+      ></script>
+      {/* ========================================================== */}
+      
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-10">
           <h1 className="text-3xl font-bold flex items-center gap-2">

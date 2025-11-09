@@ -71,6 +71,16 @@ export default function ContactUsPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 flex items-center justify-center px-6 py-20">
+      {/* ========================================================== */}
+      {/* سكريبت Google AdSense - تم إضافته هنا */}
+      {/* ========================================================== */}
+      <script 
+        async 
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2620230909210931"
+        crossOrigin="anonymous" 
+      ></script>
+      {/* ========================================================== */}
+
       <motion.div
         className="bg-white dark:bg-gray-900 p-10 rounded-3xl shadow-2xl w-full max-w-2xl"
         initial={{ opacity: 0, y: 30 }}
