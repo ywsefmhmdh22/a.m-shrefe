@@ -23,7 +23,11 @@ import {
     Monitor,
     Zap,
     Camera,
-    ChevronDown, // 💡 أيقونة جديدة للقائمة المنسدلة
+    ChevronDown,
+    // 🛠️ الأيقونات المضافة للقائمة الجانبية
+    Receipt,
+    Wrench,
+    Settings, // تم إبقاء Settings احتياطياً إذا كنت تستخدمها في مكان آخر
 } from 'lucide-react';
 
 import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -163,11 +167,26 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({ images, initialIn
 const SideMenu: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
 
+    // 🚀 تم تحديث الأيقونات هنا:
     const staticLinks = [
         { name: 'تواصل معنا', href: '/contact-us', icon: MessageSquare },
         { name: 'من نحن', href: '/about-us', icon: Users },
         { name: 'سياسة الخصوصية', href: '/privacy-policy', icon: BookOpen },
-        { name: 'مشترياتي', href: '/my-purchases', icon: ShoppingBag },
+        { 
+            name: 'مشترياتي', 
+            href: '/my-purchases', 
+            icon: Receipt // ⬅️ تم التغيير إلى Receipt 
+        },
+        { 
+            name: 'خدماتنا', 
+            href: '/OurServices', 
+            icon: Wrench // ⬅️ تم التغيير إلى Wrench
+        },
+        { 
+            name: 'المدونة', 
+            href: '/Blog_Page', 
+            icon: BookOpen // ⬅️ تم التغيير إلى BookOpen
+        },
     ];
 
     return (
@@ -252,30 +271,30 @@ const HomePage: React.FC = () => {
     const calculateDropdownPosition = useCallback(() => {
         if (accessoriesButtonRef.current) {
             const buttonRect = accessoriesButtonRef.current.getBoundingClientRect();
-            
+
             // تحديد الارتفاع التقريبي للقائمة المنسدلة (لتظهر فوق الزر)
-            const dropdownHeightEstimate = 280; 
+            const dropdownHeightEstimate = 280;
             const topPosition = buttonRect.top - dropdownHeightEstimate;
-            
+
             // تحديد ما إذا كان الزر على الجانب الأيمن من الشاشة
             const isRightSide = buttonRect.left > (window.innerWidth / 2);
-            
+
             setDropdownStyle({
                 // إذا كان هناك مساحة كافية، تظهر القائمة فوق الزر؛ وإلا تظهر تحته
                 top: topPosition > 100 ? topPosition : buttonRect.top + buttonRect.height + 10,
                 // تحديد ما إذا كانت القائمة تظهر من اليمين أو اليسار بناءً على موقع الزر
-                right: isRightSide ? (window.innerWidth - buttonRect.right) : 'auto', 
+                right: isRightSide ? (window.innerWidth - buttonRect.right) : 'auto',
                 left: isRightSide ? 'auto' : buttonRect.left,
                 transform: isRightSide ? 'translateX(0)' : 'translateX(0)',
-                width: '180px', 
+                width: '180px',
                 textAlign: 'center',
             });
         } else {
-             setDropdownStyle({
+            setDropdownStyle({
                 bottom: '80px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                width: '180px', 
+                width: '180px',
                 textAlign: 'center',
             });
         }
@@ -381,7 +400,7 @@ const HomePage: React.FC = () => {
             const accessoryKeys = ACCESSORIES_SUB_CATEGORIES
                 .map(c => c.key.toLowerCase().trim())
                 .filter(k => k !== 'accessories');
-            
+
             // فلترة الإعلانات التي فئتها (category) تندرج تحت أي فئة إكسسوارات فرعية
             return allAds.filter(ad =>
                 ad.category && accessoryKeys.includes(ad.category)
@@ -416,10 +435,10 @@ const HomePage: React.FC = () => {
         if (newCategory === 'accessories') {
             // إذا كانت 'accessories' مختارة بالفعل، نقلب حالة القائمة المنسدلة
             if (selectedCategory === 'accessories') {
-                   // إذا لم تكن القائمة المنسدلة مفتوحة، نختار تلقائياً "كل الإكسسوارات" قبل الفتح
-                 if (!isAccessoriesDropdownOpen) {
-                    setSelectedSubCategory('accessories'); 
-                 }
+                // إذا لم تكن القائمة المنسدلة مفتوحة، نختار تلقائياً "كل الإكسسوارات" قبل الفتح
+                if (!isAccessoriesDropdownOpen) {
+                    setSelectedSubCategory('accessories');
+                }
                 setIsAccessoriesDropdownOpen(prev => !prev);
             } else {
                 // إذا لم تكن 'accessories' مختارة، نختارها ونفتح القائمة المنسدلة على "كل الإكسسوارات"
@@ -535,7 +554,7 @@ const HomePage: React.FC = () => {
                                     handleCategorySelect(category.key); // لتحديد الفئة عند التحويم
                                     setIsAccessoriesDropdownOpen(true); // لفتح القائمة عند التحويم
                                 } : undefined}
-                                onMouseLeave={isAccessoriesButton ? () => {} : undefined} 
+                                onMouseLeave={isAccessoriesButton ? () => {} : undefined}
                                 className={`flex items-center text-xs sm:text-sm font-semibold whitespace-nowrap px-3 sm:px-4 py-2 rounded-full transition-all duration-300 shadow-lg relative ${
                                     isAccessoriesButton && isAccessoriesDropdownOpen
                                         ? 'bg-blue-800 text-white transform scale-105 shadow-blue-700/50' // لون أزرق داكن للملحقات النشطة/المفتوحة
@@ -629,67 +648,64 @@ const HomePage: React.FC = () => {
                                                 <button onClick={() => toggleDetails(ad.id)} className="w-full sm:w-auto">
                                                     <span
                                                         // 💎 لون نص الزر: أزرق داكن
-                                                        className="flex items-center text-sm font-semibold text-blue-700 hover:text-blue-900 transition duration-300 mt-2 sm:mt-0"
+                                                        className="text-xs font-medium text-sky-300 hover:text-white transition duration-300 underline"
                                                     >
-                                                        {isExpanded ? 'إخفاء التفاصيل' : 'شاهد التفاصيل الكاملة'}
-                                                        {isExpanded ? <ArrowUp className="w-4 h-4 mr-2 transform rotate-180" /> : <ArrowUp className="w-4 h-4 mr-2" />}
+                                                        {isExpanded ? 'إخفاء التفاصيل ↑' : 'شاهد التفاصيل ↓'}
                                                     </span>
                                                 </button>
-
                                             </div>
-                                        </div>
-                                    </div>
 
-                                    {/* 💡 شريط الصور المصغرة عند وجود أكثر من صورة */}
-                                    {hasImagesToShowStrip && (
-                                        <div className="flex justify-start space-x-2 space-x-reverse overflow-x-auto p-2 bg-white/70 rounded-xl shadow-inner border border-sky-200">
-                                            {ad.images.map((image, imageIndex) => (
-                                                <div
-                                                    key={imageIndex}
-                                                    onClick={() => setActiveImageInAd(prev => ({ ...prev, [ad.id]: image }))}
-                                                    className={`relative w-16 h-16 min-w-[4rem] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 shadow-md ${
-                                                        // 💎 إطار سماوي/أزرق للصورة النشطة
-                                                        mainImageSrc === image
-                                                            ? 'border-3 border-blue-600 ring-2 ring-sky-400 scale-105'
-                                                            : 'border border-gray-300 hover:border-blue-400'
-                                                    }`}
-                                                >
+                                        </div>
+
+                                        {/* شريط الصور المصغرة */}
+                                        {hasImagesToShowStrip && (
+                                            <div
+                                                // 💎 خلفية الشريط: تدرج أزرق داكن مع ضبابية
+                                                className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-start space-x-2 space-x-reverse p-2 overflow-x-auto">
+                                                {ad.images.map((imgUrl, idx) => (
                                                     <Image
-                                                        src={image}
-                                                        alt={`${ad.name} - صورة ${imageIndex + 1}`}
-                                                        layout="fill"
-                                                        objectFit="cover"
+                                                        key={idx}
+                                                        src={imgUrl}
+                                                        alt={`${ad.name} صورة مصغرة ${idx + 1}`}
+                                                        width={50}
+                                                        height={50}
+                                                        onClick={() => setActiveImageInAd(prev => ({ ...prev, [ad.id]: imgUrl }))}
+                                                        // 💎 حدود الصورة المصغرة النشطة: نيون سماوي
+                                                        className={`w-12 h-12 object-cover rounded-md cursor-pointer transition-all duration-300 ${
+                                                            mainImageSrc === imgUrl
+                                                                ? 'border-2 border-sky-400 transform scale-110 shadow-[0_0_10px_rgba(0,191,255,0.7)]'
+                                                                : 'border border-gray-600 opacity-60 hover:opacity-100'
+                                                        }`}
                                                         unoptimized={true}
                                                     />
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* قسم التفاصيل الموسعة (خارج البطاقة) */}
+                                    {isExpanded && (
+                                        <div
+                                            // 💎 خلفية التفاصيل الموسعة: أبيض/سماوي فاتح
+                                            className="bg-white/95 p-5 rounded-2xl shadow-xl border border-sky-300 animate-slideDown">
+                                            <h4 className="text-lg font-bold mb-3 text-blue-700">وصف المنتج الكامل:</h4>
+                                            <p className="text-gray-700 whitespace-pre-wrap">{ad.description}</p>
+                                            <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center">
+                                                {/* 💎 زر التواصل عبر واتساب */}
+                                                <a
+                                                    href={whatsappLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center text-sm font-semibold bg-green-500 text-white px-4 py-2 rounded-full transition-all duration-300 hover:bg-green-600 shadow-md">
+                                                    <MessageSquare className="w-4 h-4 ml-2" />
+                                                    تواصل واتساب
+                                                </a>
+                                                <span className="text-sm font-semibold text-blue-800">
+                                                    ID: {ad.id.substring(0, 8)}...
+                                                </span>
+                                            </div>
                                         </div>
                                     )}
-
-
-                                    {/* 🌟 التفاصيل الموسعة */}
-                                    <div
-                                        // 💎 خلفية التفاصيل الموسعة: أزرق داكن مع حدود وظل نيون أزرق
-                                        className={`overflow-hidden transition-max-height duration-700 ease-in-out ${
-                                            isExpanded ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'
-                                        }`}
-                                        style={{ maxHeight: isExpanded ? '400px' : '0' }}
-                                    >
-                                        <div className="p-4 rounded-xl bg-blue-900/95 text-white shadow-[0_0_30px_rgba(0,100,255,0.4)] border border-sky-400">
-                                            <h4 className="text-lg font-bold mb-3 border-b border-sky-500/50 pb-1 text-sky-300">وصف المنتج الكامل</h4>
-                                            <p className="text-sm leading-relaxed text-gray-200 whitespace-pre-wrap">{ad.description}</p>
-                                            
-                                            {/* زر التواصل عبر واتساب */}
-                                            <Link href={whatsappLink} target="_blank" passHref>
-                                                <div
-                                                    // 💎 زر واتساب: أخضر نيون مع ظل أخضر
-                                                    className="flex items-center justify-center mt-4 p-3 bg-green-500/90 text-black rounded-full font-bold transition-all duration-300 hover:bg-green-400 shadow-[0_0_20px_rgba(0,255,0,0.4)] cursor-pointer">
-                                                    <ExternalLink className="w-5 h-5 ml-2" />
-                                                    تواصل معنا مباشرة عبر واتساب
-                                                </div>
-                                            </Link>
-                                        </div>
-                                    </div>
                                 </div>
                             );
                         })}
@@ -697,7 +713,7 @@ const HomePage: React.FC = () => {
                 )}
             </section>
 
-            {/* 🌟 نافذة معاينة الصور (المودال) */}
+            {/* 🛠️ مكون نافذة المعاينة المنبثقة */}
             {modalImages && (
                 <ImageGalleryModal
                     images={modalImages}
@@ -706,17 +722,17 @@ const HomePage: React.FC = () => {
                 />
             )}
 
-            {/* زر العودة للأعلى (Top) */}
+            {/* ⬆️ زر العودة للأعلى */}
             <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                // 💎 لون الزر: أزرق داكن مع ظل نيون أزرق
-                className="fixed bottom-24 left-4 z-40 p-3 rounded-full bg-blue-800 text-white shadow-[0_0_25px_rgba(0,150,255,0.7)] transition-all duration-500 hover:bg-blue-600 hover:scale-110"
-                aria-label="العودة لأعلى الصفحة"
+                // 💎 تدرج الزر: أزرق/سماوي
+                className="fixed bottom-24 right-4 z-50 p-3 rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-600 text-white shadow-[0_0_20px_rgba(0,191,255,0.7)] transition-transform duration-300 hover:scale-110"
+                aria-label="العودة إلى الأعلى"
             >
                 <ArrowUp className="w-6 h-6" />
             </button>
         </main>
     );
-};
+}
 
 export default HomePage;
